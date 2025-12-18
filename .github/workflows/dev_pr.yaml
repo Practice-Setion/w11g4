@@ -1,0 +1,11 @@
+name: we_dev_pr
+on:
+  pull_request:
+    branches:
+      - develop
+jobs:
+  dev_pr_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome step 
+        run: echo "WEllcome to the GitHub Acions"
