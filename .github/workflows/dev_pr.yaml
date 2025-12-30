@@ -3,6 +3,9 @@ on:
   pull_request:
     branches:
       - develop
+    types:
+      - opened
+      - synchronize
 jobs:
   dev_pr_job:
     runs-on: ubuntu-latest
