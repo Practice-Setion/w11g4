@@ -38,7 +38,7 @@ jobs:
 #create job for the build the image
 #we can do this n only one job but if we do this seprately for save the time bacasue it run mulitple job parallel instaead  of one 
   image-build-job:
-    needs: "build-job"
+    # needs: "build-job"
     runs-on: ubuntu-latest 
     steps:
       - name: Clone Repo
