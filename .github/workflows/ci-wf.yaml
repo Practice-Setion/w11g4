@@ -1,4 +1,6 @@
 name: ci-wf
+
+# Trigger workflow on pull request to develop branch
 on:
   pull_request:
     branches:
@@ -6,54 +8,93 @@ on:
     types:
       - opened
       - synchronize
+
 jobs:
+  # -------------------- LINTING JOB --------------------
   linting-job:
     runs-on: ubuntu-latest
     steps:
-      - name: Liting Job
-        run: echo "Starting Litning of HTML & CSS Files"
+      # Just a log message for clarity
+      - name: Linting Job
+        run: echo "Starting Linting of HTML & CSS Files"
+
+      # Clone repository on GitHub runner
       - name: Clone Repo On the Runner
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      # Setup Node.js environment (mandatory for npm/npx)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Install dev dependencies
       - name: Install Dev Dependencies
         run: npm install
+
+      # Lint HTML files
       - name: Lint HTML Files
         run: npx htmlhint "**/*.html"
+
+      # Lint CSS files
       - name: Lint CSS Files
         run: npx stylelint "**/*.css"
-    
 
+  # -------------------- BUILD JOB --------------------
   build-job:
-    needs: "linting-job"
+    # This job runs only if linting-job succeeds
+    needs: linting-job
     runs-on: ubuntu-latest
     steps:
+      # Log message
       - name: Build Job
-        run: echo "Build Job Goint to Start"
+        run: echo "Build Job Going to Start"
+
+      # Clone repository
       - name: Clone Repo
-        uses: actions/checkout@v6
-      - name: Install Dependecies
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Install dependencies
+      - name: Install Dependencies
         run: npm install
+
+      # Build website using Parcel
       - name: Build Website With Parcel
         run: npx parcel build "./src/index.html" --dist-dir "./dist" --public-url "./" --no-cache
 
-#create job for the build the image
-#we can do this n only one job but if we do this seprately for save the time bacasue it run mulitple job parallel instaead  of one 
+  # -------------------- DOCKER IMAGE BUILD JOB --------------------
   image-build-job:
-    # needs: "build-job"
-    runs-on: ubuntu-latest 
+    # This job runs only if build-job succeeds
+    needs: build-job
+    runs-on: ubuntu-latest
     steps:
+      # Clone repository
       - name: Clone Repo
-        uses: actions/checkout@v6
-      - run: docker image 
-      # workflwo autenticate with the docker-hub 
-      #Because it use many time so we need to search on Marketplace on the GitHub
-      - name: Login To docker-hub
+        uses: actions/checkout@v4
+
+      # Login to Docker Hub
+      # Using GitHub Marketplace action
+      - name: Login To Docker Hub
         uses: docker/login-action@v3
-        with: #These are the parameters  as in functions 
-          username: ${{ secrets.DOCKERHUB_USERNAME }} 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build Docker image
+      # "." is the build context (current directory)
       - name: Build Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/w11g4:latest .
-      - name: list the Images
-        run: docker image ls 
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/w11g4:latest .
+
+      # List Docker images (for verification)
+      - name: List Docker Images
+        run: docker image ls
+
+      # Push Docker image to Docker Hub
       - name: Push Docker Image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/w11g4:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/w11g4:latest
